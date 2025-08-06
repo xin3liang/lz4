@@ -12,6 +12,50 @@ import (
 	"github.com/pierrec/lz4/v4/internal/lz4block"
 )
 
+var plaintext0 = []byte("jkoedasdcnegzb.,ewqegmovobspjikodecedegds[]")
+
+func benchmarkBlockCompress(b *testing.B, plain []byte) {
+	dst := make([]byte, lz4.CompressBlockBound(len(plain)))
+
+	b.SetBytes(int64(len(plain)))
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		_, err := lz4.CompressBlock(plain, dst, nil)
+		if err != nil {
+			b.Errorf("Compress error: %v", err)
+		}
+	}
+}
+
+func benchmarkBlockUncompress(b *testing.B, plain []byte) {
+	dst := make([]byte, len(plain))
+	compressed := make([]byte, lz4.CompressBlockBound(len(plain)))
+	n, err := lz4.CompressBlock(plain, compressed, nil)
+	if err != nil {
+		b.Errorf("Compress error: %v", err)
+	}
+	compressed = compressed[:n]
+
+	b.SetBytes(int64(len(compressed)))
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		_, err := lz4.UncompressBlock(compressed, dst)
+		if err != nil {
+			b.Errorf("Uncompress error: %v", err)
+		}
+	}
+}
+
+// pg1661 = 594933 bytes(581K)
+func BenchmarkBlockCompressShort(b *testing.B)   { benchmarkBlockCompress(b, plaintext0) }
+func BenchmarkBlockCompressLong(b *testing.B)    { benchmarkBlockCompress(b, pg1661) }
+func BenchmarkBlockUncompressShort(b *testing.B) { benchmarkBlockUncompress(b, plaintext0) }
+func BenchmarkBlockUncompressLong(b *testing.B)  { benchmarkBlockUncompress(b, pg1661) }
+
 func BenchmarkCompress(b *testing.B) {
 	buf := make([]byte, len(pg1661))
 	var c lz4.Compressor
