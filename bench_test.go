@@ -15,18 +15,22 @@ import (
 var plaintext0 = []byte("jkoedasdcnegzb.,ewqegmovobspjikodecedegds[]")
 
 func benchmarkBlockCompress(b *testing.B, plain []byte) {
-	dst := make([]byte, lz4.CompressBlockBound(len(plain)))
+	var err error
+	var n int
+	lenPlain := len(plain)
+	dst := make([]byte, lz4.CompressBlockBound(lenPlain))
 
-	b.SetBytes(int64(len(plain)))
+	b.SetBytes(int64(lenPlain))
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, err := lz4.CompressBlock(plain, dst, nil)
+		n, err = lz4.CompressBlock(plain, dst, nil)
 		if err != nil {
-			b.Errorf("Compress error: %v", err)
+			b.Errorf("Compress error: %v bytes, %v", n, err)
 		}
 	}
+	b.ReportMetric(float64(n)/float64(lenPlain)*100, "ratio")
 }
 
 func benchmarkBlockUncompress(b *testing.B, plain []byte) {
