@@ -34,15 +34,16 @@ func benchmarkBlockCompress(b *testing.B, plain []byte) {
 }
 
 func benchmarkBlockUncompress(b *testing.B, plain []byte) {
-	dst := make([]byte, len(plain))
-	compressed := make([]byte, lz4.CompressBlockBound(len(plain)))
+	lenPlain := len(plain)
+	dst := make([]byte, lenPlain)
+	compressed := make([]byte, lz4.CompressBlockBound(lenPlain))
 	n, err := lz4.CompressBlock(plain, compressed, nil)
 	if err != nil {
 		b.Errorf("Compress error: %v", err)
 	}
 	compressed = compressed[:n]
 
-	b.SetBytes(int64(len(compressed)))
+	b.SetBytes(int64(lenPlain))
 	b.ReportAllocs()
 	b.ResetTimer()
 
